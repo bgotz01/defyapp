@@ -21,14 +21,18 @@ const Login = () => {
         password,
       });
       if (response.status === 200) {
-        const { token, user } = response.data;
+        const { token } = response.data;
         localStorage.setItem("token", token);
+  
+        // Navigate to the dashboard and force a page reload
         router.push("/dashboard");
+        window.location.href = "/dashboard";  // This will reload the page after navigating
       }
     } catch (err) {
       setError("Login failed. Please try again.");
     }
   };
+  
 
   return (
     <div className="min-h-screen flex items-center justify-center">

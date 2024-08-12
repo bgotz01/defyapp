@@ -7,6 +7,7 @@ import { getAssetsByOwner, fetchNFTDetails, extractGroupAddress } from '@/utils/
 import Image from 'next/image';
 import Link from 'next/link';
 import { FaExternalLinkAlt } from 'react-icons/fa';
+import ShakiraPic from '/public/assets/ShakiraPic.jpg'; // Import the image
 
 interface Asset {
   id: string;
@@ -33,6 +34,7 @@ const Closet: React.FC = () => {
   const [assets, setAssets] = useState<DetailedAsset[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [profileLoaded, setProfileLoaded] = useState<boolean>(false);
 
   useEffect(() => {
     const storedWalletAddress = sessionStorage.getItem('walletAddress');
@@ -83,6 +85,7 @@ const Closet: React.FC = () => {
       );
 
       setAssets(detailedAssets);
+      setProfileLoaded(true); // Set profile as loaded after assets are fetched
     } catch (err) {
       setError('Failed to fetch assets');
     } finally {
@@ -91,7 +94,7 @@ const Closet: React.FC = () => {
   };
 
   return (
-    <div className="p-4 pt-20 bg-white dark:bg-black min-h-screen">
+    <div className="p-4 pt-20 bg-white dark:bg-black min-h-screen relative">
       <h1 className="text-3xl font-bold mb-4 text-center text-black dark:text-white">Walk In Closet</h1>
       <h3 className="text-center mb-4 text-black dark:text-white">Please Input A Wallet Address Only</h3>
 
@@ -113,6 +116,13 @@ const Closet: React.FC = () => {
       </div>
 
       {error && <div className="text-red-500 text-center mb-4">{error}</div>}
+
+      {profileLoaded && (
+        <div className="absolute top-4 left-4 flex items-center p-4 border rounded-lg shadow-lg bg-white dark:bg-gray-800">
+          <Image src={ShakiraPic} alt="Shakira's Profile" width={50} height={50} className="rounded-full" />
+          <h2 className="text-lg font-bold ml-4 text-black dark:text-white">Shakira Closet</h2>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {assets.map((asset: DetailedAsset) => (

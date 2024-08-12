@@ -4,10 +4,10 @@
 
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import Image from 'next/image';
 import Link from 'next/link';
+import { FiExternalLink } from 'react-icons/fi'; // External link icon
 
 interface Designer {
   _id: string;
@@ -25,7 +25,6 @@ interface Collection {
 const DesignersPage = () => {
   const [designers, setDesigners] = useState<Designer[]>([]);
   const [collections, setCollections] = useState<{ [key: string]: Collection[] }>({});
-  const router = useRouter();
 
   useEffect(() => {
     const fetchDesigners = async () => {
@@ -54,17 +53,29 @@ const DesignersPage = () => {
       <div className="w-full max-w-2xl space-y-4">
         {designers.map((designer: Designer) => (
           <Card key={designer._id} className="flex flex-col p-4 border rounded bg-card dark:bg-gray-800">
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">{designer.username}</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Solana Wallet: {designer.solanaWallet}</p>
+            <Link href={`/discover/designers/${designer._id}`} className="text-lg font-semibold text-gray-800 dark:text-gray-200 no-underline">
+              {designer.username}
+            </Link>
+            <div className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
+              Solana Wallet: 
+              <Link href={`https://solana.fm/address/${designer.solanaWallet}`} target="_blank" rel="noopener noreferrer" className="ml-1 flex items-center text-gray-600 dark:text-gray-400 no-underline">
+                {designer.solanaWallet} <FiExternalLink className="ml-1" />
+              </Link>
+            </div>
             <div className="mt-4 space-y-2">
               {collections[designer._id]?.map((collection: Collection) => (
                 <div key={collection._id} className="flex items-center space-x-4">
                   <Image src={collection.imageUrl} alt={collection.name} width={50} height={50} className="object-cover rounded-md" />
                   <div>
-                    <Link href={`/discover/collections/${collection._id}`} className="text-md font-medium text-blue-500 dark:text-blue-300 hover:underline">
+                    <span className="text-md font-medium text-gray-800 dark:text-gray-200 no-underline">
                       {collection.name}
-                    </Link>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Collection Address: {collection.collectionAddress}</p>
+                    </span>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
+                      Collection Address: 
+                      <Link href={`https://solana.fm/address/${collection.collectionAddress}`} target="_blank" rel="noopener noreferrer" className="ml-1 flex items-center text-gray-600 dark:text-gray-400 no-underline">
+                        {collection.collectionAddress} <FiExternalLink className="ml-1" />
+                      </Link>
+                    </p>
                   </div>
                 </div>
               ))}

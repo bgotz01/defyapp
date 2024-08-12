@@ -1,5 +1,6 @@
 // src/app/studio/collections/page.tsx
 
+
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -11,6 +12,7 @@ import { Card } from '@/components/ui/card';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ExternalLink } from 'lucide-react';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface Collection {
   _id: string;
@@ -34,6 +36,7 @@ const CollectionsPage = () => {
   const [editMode, setEditMode] = useState(false);
   const [editCollectionId, setEditCollectionId] = useState('');
   const router = useRouter();
+  const { theme } = useTheme();
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -55,15 +58,14 @@ const CollectionsPage = () => {
   const handleAddCollection = async (e: React.FormEvent) => {
     e.preventDefault();
     const token = localStorage.getItem('token');
-
+  
     if (!name || !collectionAddress || !imageUrl || !jsonUrl) {
       setError('All fields are required');
       return;
     }
-
-    console.log('Sending data:', { name, collectionAddress, imageUrl, jsonUrl });
-
+  
     try {
+      // Create the collection
       const response = await axios.post('http://localhost:4000/api/collections', {
         name,
         collectionAddress,
@@ -74,10 +76,13 @@ const CollectionsPage = () => {
           Authorization: `Bearer ${token}`
         }
       });
-
+  
       if (response.status === 201) {
+        const newCollection = response.data;
+  
+        // Update local state with the new collection
         setSuccess('Collection added successfully');
-        setCollections([...collections, response.data]);
+        setCollections([...collections, newCollection]);
         setName('');
         setCollectionAddress('');
         setImageUrl('');
@@ -90,6 +95,8 @@ const CollectionsPage = () => {
       console.error('Error adding collection:', err);
     }
   };
+  
+  
 
   const handleEditCollection = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -169,60 +176,69 @@ const CollectionsPage = () => {
   const trimAddress = (address: string) =>
     `${address.slice(0, 6)}...${address.slice(-4)}`;
 
+  const generateSolanaFmLink = (collectionAddress: string) => {
+    return `https://solana.fm/address/${collectionAddress}`;
+  };
+  
+
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background dark:bg-background p-4">
-      <div className="w-full max-w-lg p-8 bg-card dark:bg-card rounded shadow-md mb-8">
-        <h2 className="text-2xl font-bold mb-6 text-center text-foreground dark:text-foreground">
+    <div className={`min-h-screen flex flex-col items-center justify-center p-4 ${theme === 'light' ? 'bg-bglight text-textlight' : 'bg-bgdark text-textdark'}`}>
+      <div className={`w-full max-w-lg p-8 rounded shadow-md mb-8 ${theme === 'light' ? 'bg-productContainerLight' : 'bg-productContainerDark'}`}>
+        <h2 className="text-2xl font-bold mb-6 text-center">
           {editMode ? 'Edit Collection' : 'Add New Collection'}
         </h2>
-        {error && <p className="text-destructive dark:text-destructive-foreground mb-4">{error}</p>}
-        {success && <p className="text-green-500 dark:text-green-400 mb-4">{success}</p>}
+        {error && <p className="text-red-500 mb-4">{error}</p>}
+        {success && <p className="text-green-500 mb-4">{success}</p>}
         <form onSubmit={editMode ? handleEditCollection : handleAddCollection} className="space-y-4">
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-foreground dark:text-foreground">Name</label>
+            <label htmlFor="name" className="block text-sm font-medium">Name</label>
             <Input
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Collection Name"
               required
+              className={theme === 'light' ? 'bg-silver text-textlight' : 'bg-productContainerDark text-textdark'}
             />
           </div>
           <div>
-            <label htmlFor="collectionAddress" className="block text-sm font-medium text-foreground dark:text-foreground">Collection Address</label>
+            <label htmlFor="collectionAddress" className="block text-sm font-medium">Collection Address</label>
             <Input
               id="collectionAddress"
               value={collectionAddress}
               onChange={(e) => setCollectionAddress(e.target.value)}
               placeholder="Collection Address"
               required
+              className={theme === 'light' ? 'bg-silver text-textlight' : 'bg-productContainerDark text-textdark'}
             />
           </div>
           <div>
-            <label htmlFor="imageUrl" className="block text-sm font-medium text-foreground dark:text-foreground">Image URL</label>
+            <label htmlFor="imageUrl" className="block text-sm font-medium">Image URL</label>
             <Input
               id="imageUrl"
               value={imageUrl}
               onChange={(e) => setImageUrl(e.target.value)}
               placeholder="Image URL"
               required
+              className={theme === 'light' ? 'bg-silver text-textlight' : 'bg-productContainerDark text-textdark'}
             />
           </div>
           <div>
-            <label htmlFor="jsonUrl" className="block text-sm font-medium text-foreground dark:text-foreground">JSON URL</label>
+            <label htmlFor="jsonUrl" className="block text-sm font-medium">JSON URL</label>
             <Input
               id="jsonUrl"
               value={jsonUrl}
               onChange={(e) => setJsonUrl(e.target.value)}
               placeholder="JSON URL"
               required
+              className={theme === 'light' ? 'bg-silver text-textlight' : 'bg-productContainerDark text-textdark'}
             />
           </div>
-          <Button type="submit" className="w-full">
+          <Button type="submit" className="w-full bg-buttonBackground hover:bg-buttonHover text-textdark">
             {editMode ? 'Save Changes' : 'Add Collection'}
           </Button>
           {editMode && (
-            <Button type="button" className="w-full" onClick={() => setEditMode(false)}>
+            <Button type="button" className="w-full bg-buttonBackground hover:bg-buttonHover text-textdark" onClick={() => setEditMode(false)}>
               Cancel
             </Button>
           )}
@@ -230,14 +246,14 @@ const CollectionsPage = () => {
       </div>
       <div className="w-full max-w-2xl space-y-4">
         {collections.map((collection: Collection) => (
-          <Card key={collection._id} className="flex flex-col p-4 border rounded bg-card dark:bg-card text-foreground dark:text-foreground">
+          <Card key={collection._id} className={`flex flex-col p-4 border rounded ${theme === 'light' ? 'bg-productContainerLight text-textlight' : 'bg-productContainerDark text-textdark'}`}>
             <div className="flex items-center mb-4">
               <Image src={collection.imageUrl} alt={collection.name} width={80} height={80} className="object-cover rounded-md" />
               <div className="flex flex-col ml-4">
-                <h3 className="text-lg font-semibold text-foreground dark:text-foreground">{collection.name}</h3>
-                <p className="text-sm text-foreground dark:text-foreground">
+                <h3 className="text-lg font-semibold">{collection.name}</h3>
+                <p className="text-sm">
                   <strong>Collection Address:</strong> 
-                  <Link href={`/explorer/collections/${collection.collectionAddress}`} className="flex items-center space-x-1 hover:underline">
+                  <Link href={generateSolanaFmLink(collection.collectionAddress)} className="flex items-center space-x-1 hover:underline">
                     <span>{trimAddress(collection.collectionAddress)}</span>
                     <ExternalLink className="w-4 h-4" />
                   </Link>
@@ -245,19 +261,17 @@ const CollectionsPage = () => {
               </div>
             </div>
             <div className="flex justify-between items-center">
-              <Button variant="default" onClick={() => navigateToProductsPage(collection._id)}>Add Products</Button>
+              <Button variant="default" onClick={() => navigateToProductsPage(collection._id)} className="bg-buttonBackground hover:bg-buttonHover text-textdark">Add Products</Button>
               <div className="flex space-x-2">
-                <Button variant="outline" size="sm" onClick={() => startEditCollection(collection)}>Edit</Button>
-                <Button variant="destructive" size="sm" onClick={() => handleDeleteCollection(collection._id)}>Delete</Button>
+                <Button variant="outline" size="sm" onClick={() => startEditCollection(collection)} className="bg-buttonBackground hover:bg-buttonHover text-textdark">Edit</Button>
+                <Button variant="destructive" size="sm" onClick={() => handleDeleteCollection(collection._id)} className="bg-buttonBackground hover:bg-buttonHover text-textdark">Delete</Button>
               </div>
             </div>
           </Card>
         ))}
       </div>
     </div>
-);
-
-  
+  );
 };
 
 export default CollectionsPage;

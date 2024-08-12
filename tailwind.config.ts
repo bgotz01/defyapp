@@ -19,6 +19,19 @@ const config = {
         serif: ['var(--font-serif)', ...fontFamily.serif], 
       },
       colors: {
+
+        productContainerLight: '#f1f5f9',
+        productContainerDark: '#171717',
+        buttonBackground: '#262626',
+        buttonText: '#ffffff',
+        buttonHover: '#3a3a3a',
+        bglight: '#f1f5f9', // Light mode background color
+        bgdark: '#000000', // Dark mode background color
+        textlight: '#000000', // Light mode text color
+        textdark: '#ffffff',  // Dark mode text color
+        silver: '#f1f5f9',
+
+
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -81,3 +94,4 @@ const config = {
 } satisfies Config
 
 export default config;
+

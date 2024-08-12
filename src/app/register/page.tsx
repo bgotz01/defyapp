@@ -1,26 +1,39 @@
+//src/app/register.page.tsx
+
 'use client';
 
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 const Register = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [email, setEmail] = useState(''); // New state for email
-  const [solanaWallet, setSolanaWallet] = useState(''); // New state for Solana wallet
+  const [email, setEmail] = useState('');
+  const [solanaWallet, setSolanaWallet] = useState('');
+  const [role, setRole] = useState('regular'); // Default to 'regular'
+  const [designerCode, setDesignerCode] = useState(''); // State for designer code
   const [error, setError] = useState('');
   const router = useRouter();
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      // Validate designer code if role is 'designer'
+      if (role === 'designer' && designerCode !== 'defydesigner') {
+        setError('Invalid designer code.');
+        return;
+      }
+
       const response = await axios.post('http://localhost:4000/api/register', {
         username,
         password,
-        email, // Include email
-        solanaWallet, // Include Solana wallet address
+        email,
+        solanaWallet,
+        role,
       });
+
       if (response.status === 201) {
         router.push('/login');
       }
@@ -86,6 +99,45 @@ const Register = () => {
               onChange={(e) => setSolanaWallet(e.target.value)}
             />
           </div>
+          {role === 'designer' && (
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-2 text-black dark:text-white" htmlFor="designerCode">
+                Designer Code
+              </label>
+              <input
+                type="text"
+                id="designerCode"
+                className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded bg-gray-50 dark:bg-white text-black dark:text-black"
+                value={designerCode}
+                onChange={(e) => setDesignerCode(e.target.value)}
+                required
+              />
+            </div>
+          )}
+          <div className="mb-4 flex items-center">
+            <input
+              type="radio"
+              id="roleRegular"
+              name="role"
+              value="regular"
+              checked={role === 'regular'}
+              onChange={() => setRole('regular')}
+              className="mr-2"
+            />
+            <label htmlFor="roleRegular" className="text-black dark:text-white">Register as Regular User</label>
+          </div>
+          <div className="mb-4 flex items-center">
+            <input
+              type="radio"
+              id="roleDesigner"
+              name="role"
+              value="designer"
+              checked={role === 'designer'}
+              onChange={() => setRole('designer')}
+              className="mr-2"
+            />
+            <label htmlFor="roleDesigner" className="text-black dark:text-white">Register as Designer</label>
+          </div>
           <button
             type="submit"
             className="w-full bg-blue-500 text-white p-2 rounded"
@@ -93,6 +145,11 @@ const Register = () => {
             Register
           </button>
         </form>
+        <div>
+          <Link href="/login/page">
+            Login here
+          </Link>
+        </div>
       </div>
     </div>
   );

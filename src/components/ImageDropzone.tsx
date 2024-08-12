@@ -2,13 +2,13 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
-import uploadToS3 from '../utils/uploadToS3'; // Adjust the path as per your project structure
-import Spinner from './Spinner'; // Import the spinner component
+import uploadToS3 from '../utils/uploadToS3'; 
+import Spinner from './Spinner'; 
 
 interface ImageDropzoneProps {
-  userId: string;
+  userId: string | null;
   onUpload: (imageUrl: string, index: number) => void;
   index: number;
 }
@@ -19,7 +19,7 @@ const ImageDropzone: React.FC<ImageDropzoneProps> = ({ userId, onUpload, index }
 
   const onDrop = async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0]; // Assuming single file upload
-    if (file) {
+    if (file && userId) {
       setLoading(true);
       const uploadedImageUrl = await uploadToS3(file, userId);
       setLoading(false);
@@ -34,6 +34,12 @@ const ImageDropzone: React.FC<ImageDropzoneProps> = ({ userId, onUpload, index }
   };
 
   const { getRootProps, getInputProps } = useDropzone({ onDrop });
+
+  useEffect(() => {
+    if (userId) {
+      console.log(`User ID in ImageDropzone: ${userId}`);
+    }
+  }, [userId]);
 
   return (
     <div className="flex flex-col items-center mb-4">

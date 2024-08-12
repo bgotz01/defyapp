@@ -25,6 +25,14 @@ const DiscoverCollectionsPage = () => {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Array of featured collection IDs
+  const featuredCollectionIds = [
+    "668e1bd70ceee2fa219c83b5",
+    "667b977fa30d430d16c43c07",
+    "66b24b0704e30e18fc1229c2",
+    "66b8cdd81aa201194da7d1b9"
+  ];
+
   useEffect(() => {
     const fetchCollections = async () => {
       try {
@@ -53,18 +61,60 @@ const DiscoverCollectionsPage = () => {
   const trimAddress = (address: string) =>
     `${address.slice(0, 6)}...${address.slice(-4)}`;
 
+  // Separate collections into featured and remaining
+  const featuredCollections = collections.filter(collection => 
+    featuredCollectionIds.includes(collection._id)
+  );
+  const remainingCollections = collections.filter(collection => 
+    !featuredCollectionIds.includes(collection._id)
+  );
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 dark:bg-black p-4">
       <h1 className="text-3xl font-bold mb-6 text-gray-800 dark:text-gray-200">Featured Collections</h1>
       <div className="w-full max-w-4xl space-y-6">
-        {collections.map((collection: Collection) => (
+        {featuredCollections.map((collection: Collection) => (
           <Card key={collection._id} className="flex flex-col md:flex-row p-4 border rounded bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200">
             <div className="flex items-center mb-4 md:mb-0 md:mr-4">
               <Image src={collection.imageUrl} alt={collection.name} width={160} height={160} className="object-cover rounded-md" />
             </div>
             <div className="flex flex-col flex-1">
               <h3 className="text-2xl font-semibold">{collection.name}</h3>
-              <p className="text-md mb-2"><strong>Designer:</strong> {collection.designerUsername}</p>
+              <p className="text-md mb-2"><strong>Designer: </strong> 
+                <Link href={`/discover/designers/${collection.designerId}`} className="text-gray-800 dark:text-gray-200 no-underline">
+                  {collection.designerUsername}
+                </Link>
+              </p>
+              <p className="text-md mb-2"><strong>Collection Address:</strong> 
+                <Link href={`https://solscan.io/address/${collection.collectionAddress}`} target="_blank">
+                  <span className="ml-2 inline-flex items-center text-gray-800 dark:text-gray-200">
+                    {trimAddress(collection.collectionAddress)}
+                    <ExternalLink className="ml-1 h-4 w-4"/>
+                  </span>
+                </Link>
+              </p>
+              <Link href={`/discover/collections/${collection._id}`} className="mt-2 inline-flex items-center text-gray-800 dark:text-gray-200">
+                View Collection
+                <ExternalLink className="ml-1 h-4 w-4"/>
+              </Link>
+            </div>
+          </Card>
+        ))}
+      </div>
+      <h1 className="text-3xl font-bold mt-12 mb-6 text-gray-800 dark:text-gray-200">All Collections</h1>
+      <div className="w-full max-w-4xl space-y-6">
+        {remainingCollections.map((collection: Collection) => (
+          <Card key={collection._id} className="flex flex-col md:flex-row p-4 border rounded bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200">
+            <div className="flex items-center mb-4 md:mb-0 md:mr-4">
+              <Image src={collection.imageUrl} alt={collection.name} width={160} height={160} className="object-cover rounded-md" />
+            </div>
+            <div className="flex flex-col flex-1">
+              <h3 className="text-2xl font-semibold">{collection.name}</h3>
+              <p className="text-md mb-2"><strong>Designer:</strong> 
+                <Link href={`/discover/designers/${collection.designerId}`} className="text-gray-800 dark:text-gray-200 no-underline">
+                  {collection.designerUsername}
+                </Link>
+              </p>
               <p className="text-md mb-2"><strong>Collection Address:</strong> 
                 <Link href={`https://solscan.io/address/${collection.collectionAddress}`} target="_blank">
                   <span className="ml-2 inline-flex items-center text-gray-800 dark:text-gray-200">

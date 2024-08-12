@@ -6,23 +6,34 @@ import React, { useState } from 'react';
 import uploadToS3 from '@/utils/uploadToS3'; // Adjust the path as per your project structure
 import { FaCopy } from 'react-icons/fa';
 
-const JSONUpload: React.FC = () => {
+interface JSONUploadProps {
+  userId: string | null;
+  onUpload: (jsonUrl: string) => void;
+}
+
+const JSONUpload: React.FC<JSONUploadProps> = ({ userId, onUpload }) => {
   const [uploading, setUploading] = useState<boolean>(false);
   const [uploadUrl, setUploadUrl] = useState<string | null>(null);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
+    if (file && userId) {
       setUploading(true);
 
-      // Upload JSON file to S3
-      const userId = 'test-user-id'; // Replace this with actual user ID logic
       try {
-        const url = await uploadToS3(file, `uploads/${userId}/json/${file.name}`);
-        setUploadUrl(url);
+        // Upload JSON file to S3, using the userId to create the folder path
+        const uploadedJsonUrl = await uploadToS3(file, userId);
+        setUploading(false);
+
+        if (uploadedJsonUrl) {
+          console.log('JSON file uploaded to S3:', uploadedJsonUrl);
+          setUploadUrl(uploadedJsonUrl);
+          onUpload(uploadedJsonUrl); // Notify parent component of the new upload
+        } else {
+          console.error('Failed to upload JSON file to S3');
+        }
       } catch (error) {
         console.error('Error uploading JSON to S3:', error);
-      } finally {
         setUploading(false);
       }
     }
@@ -31,6 +42,7 @@ const JSONUpload: React.FC = () => {
   const handleCopyToClipboard = () => {
     if (uploadUrl) {
       navigator.clipboard.writeText(uploadUrl);
+      alert('Copied to clipboard!');
     }
   };
 

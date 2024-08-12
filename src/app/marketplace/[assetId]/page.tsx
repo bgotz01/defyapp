@@ -1,4 +1,4 @@
-// src/app/discover/solana/products/[assetId]/page.tsx
+  //src/app/marketplace/[assetId]/page.tsx
 
 "use client";
 
@@ -29,6 +29,9 @@ import {
   getAssociatedTokenAddress,
   TOKEN_2022_PROGRAM_ID,
 } from "@solana/spl-token";
+import { FaCopy, FaExternalLinkAlt } from "react-icons/fa"; // Import icons
+import axios from 'axios';
+
 
 interface Product {
   name: string;
@@ -56,7 +59,7 @@ const ProductPage: React.FC = () => {
           const provider = new AnchorProvider(connection, wallet as Wallet, {});
 
           const listings = await getNFTList(provider, connection);
-          const listing = listings.find((list) => list.mint == assetId);
+          const listing = listings.find((list) => list.mint === assetId);
           const details = await getNFTDetail(
             new PublicKey(assetId),
             connection,
@@ -128,20 +131,39 @@ const ProductPage: React.FC = () => {
         alert("Connect the Wallet!");
         return;
       }
-
+  
       const provider = new AnchorProvider(connection, wallet as Wallet, {});
-
+  
       const listing = new PublicKey(listingkey);
       const mint = new PublicKey(assetId);
       try {
+        // Withdraw NFT from blockchain
         await RemoveNFTList(publicKey, mint, listing, provider, connection);
+  
+        // After successful withdrawal, update the NFT status in MongoDB
+        await axios.put('http://localhost:4000/api/updateNFTStatus', {
+          nftId: assetId,  // Assuming assetId is the NFT _id
+          active: 'no'
+        });
+  
+        // Navigate back to previous page or update UI accordingly
         router.back();
       } catch (err) {
         console.log(err);
       }
     },
-    [publicKey, connection, sendTransaction, price]
+    [publicKey, connection, sendTransaction, assetId, router]
   );
+  
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    alert("Address copied to clipboard");
+  };
+
+  const trimmedAddress = (address?: string) =>
+    address ? `${address.slice(0, 4)}...${address.slice(-4)}` : "N/A";
+
   if (!product) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 dark:bg-black p-4">
@@ -180,20 +202,64 @@ const ProductPage: React.FC = () => {
           <h1 className="text-3xl font-bold mb-4 text-gray-800 dark:text-gray-200">
             {product.name}
           </h1>
-          <p className="text-md text-gray-800 dark:text-gray-200">
-            <strong>Group Address:</strong>
+          <div className="flex items-center space-x-2">
+            <strong className="text-md text-gray-800 dark:text-gray-200">
+              Group Address:
+            </strong>
+            <span className="text-md text-gray-800 dark:text-gray-200">
+              {trimmedAddress(product.groupAddress)}
+            </span>
+            <FaCopy
+              className="cursor-pointer text-gray-800 dark:text-gray-200"
+              onClick={() => copyToClipboard(product.groupAddress)}
+            />
             <Link
               href={`https://solscan.io/address/${product.groupAddress}`}
               target="_blank"
-              className="text-blue-500 hover:underline ml-2"
             >
-              {product.groupAddress}
+              <FaExternalLinkAlt className="text-gray-800 dark:text-gray-200" />
             </Link>
-          </p>
-          <div className="text-md text-gray-800 dark:text-gray-200">
-            <strong>Price:{product.price / 1000000}USDC</strong>
           </div>
-          {product.seller == publicKey?.toString() ? (
+          <div className="flex items-center space-x-2 mt-2">
+            <strong className="text-md text-gray-800 dark:text-gray-200">
+              Seller PubKey:
+            </strong>
+            <span className="text-md text-gray-800 dark:text-gray-200">
+              {trimmedAddress(product.seller)}
+            </span>
+            <FaCopy
+              className="cursor-pointer text-gray-800 dark:text-gray-200"
+              onClick={() => copyToClipboard(product.seller)}
+            />
+            <Link
+              href={`https://solscan.io/address/${product.seller}`}
+              target="_blank"
+            >
+              <FaExternalLinkAlt className="text-gray-800 dark:text-gray-200" />
+            </Link>
+          </div>
+          <div className="flex items-center space-x-2 mt-2">
+            <strong className="text-md text-gray-800 dark:text-gray-200">
+              Token Address:
+            </strong>
+            <span className="text-md text-gray-800 dark:text-gray-200">
+              {trimmedAddress(assetId)}
+            </span>
+            <FaCopy
+              className="cursor-pointer text-gray-800 dark:text-gray-200"
+              onClick={() => copyToClipboard(assetId)}
+            />
+            <Link
+              href={`https://solscan.io/token/${assetId}`}
+              target="_blank"
+            >
+              <FaExternalLinkAlt className="text-gray-800 dark:text-gray-200" />
+            </Link>
+          </div>
+          <div className="text-md text-gray-800 dark:text-gray-200 mt-4">
+            <strong>Price: {Number(product.price) / 1000000} USDC</strong>
+          </div>
+          {product.seller === publicKey?.toString() ? (
             <Button
               className="w-full h-12 text-xl bg-blue-400 text-white hover:bg-blue-500 mt-6"
               onClick={() => onWithdraw(product.listing)}

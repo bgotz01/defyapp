@@ -1,5 +1,6 @@
 // src/app/discover/designers/[designerId]/page.tsx
 
+
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -9,6 +10,7 @@ import Card from '@/components/Card';
 import Skeleton from '@/components/Skeleton';
 import Image from 'next/image';
 import Link from 'next/link';
+import { FiExternalLink } from 'react-icons/fi'; // External link icon
 
 interface Collection {
   _id: string;
@@ -81,7 +83,13 @@ const DesignerProfilePage = () => {
     <div className="min-h-screen pt-20 flex flex-col items-center bg-gray-100 dark:bg-black p-4">
       <div className="mb-8 text-center">
         <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-2">{designer.username}</h1>
-        <p className="text-lg text-gray-600 dark:text-gray-400">Wallet: <span className="font-mono">{designer.solanaWallet}</span></p>
+        <p className="text-lg text-gray-600 dark:text-gray-400">
+          Wallet: 
+          <Link href={`https://solana.fm/address/${designer.solanaWallet}`} target="_blank" rel="noopener noreferrer" className="ml-2 inline-flex items-center text-gray-600 dark:text-gray-400 no-underline">
+            <span className="font-mono">{designer.solanaWallet}</span>
+            <FiExternalLink className="ml-1 h-4 w-4" />
+          </Link>
+        </p>
       </div>
 
       <div className="w-full">

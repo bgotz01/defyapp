@@ -1,3 +1,5 @@
+//src/utils/nftMarket.ts
+
 import * as anchor from "@coral-xyz/anchor";
 import {
   Connection,
@@ -24,6 +26,7 @@ import { resolve } from "path";
 import { SolanaNftMarketplace, IDL } from "./types/solana_nft_marketplace";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 import { NFTDetail } from "@/app/marketplace/page";
+import axios from 'axios';
 
 const PREFIX = "MARKETPLACE";
 const programId = new PublicKey("FX2TuF4AsoxvbkNC95CK5RGdkpdMWFsPszULZy68Kexp");
@@ -378,7 +381,8 @@ export async function getNFTDetail(
   connection: Connection,
   seller: string,
   price: string,
-  listing: string
+  listing: string,
+  
 ) {
   const metadata = await getTokenMetadata(
     connection,
@@ -407,6 +411,7 @@ export async function getNFTDetail(
     seller: seller,
     price: price,
     listing: listing,
+    
   };
   return NFTItem;
 }
@@ -436,4 +441,14 @@ async function createAssociatedAccount(
     { signature: tokenSign, ...latestBlockhash },
     "confirmed"
   );
+}
+
+export async function fetchListedNFTsByOwner(walletAddress: string) {
+  try {
+    const response = await axios.get(`/api/nft/listed?owner=${walletAddress}`); // Replace with your actual API endpoint
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching listed NFTs:', error);
+    throw error;
+  }
 }

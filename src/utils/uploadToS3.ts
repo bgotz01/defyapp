@@ -23,9 +23,11 @@ const uploadToS3 = async (file: DropzoneFile, userId: string): Promise<string | 
     return null;
   }
 
+  const key = `${userId}/${Date.now()}_${file.name}`; // Adding a timestamp to ensure unique filenames
+
   const params = {
     Bucket: bucketName,
-    Key: `${userId}/${file.name}`,
+    Key: key,
     Body: file,
     ContentType: file.type,
   };
@@ -37,7 +39,11 @@ const uploadToS3 = async (file: DropzoneFile, userId: string): Promise<string | 
     });
 
     const data = await upload.done();
-    return data.Location as string; // Ensure the return type is string
+    
+    // Assuming data.Location is correctly populated by AWS SDK
+    const location = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+    return location;
+
   } catch (error) {
     console.error('Error uploading to S3:', error);
     return null;

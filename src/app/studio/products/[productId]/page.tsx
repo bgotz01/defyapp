@@ -9,11 +9,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import Image from 'next/image';
 import Link from 'next/link';
+import { FiCopy } from 'react-icons/fi';
 
 interface Product {
   _id: string;
   name: string;
-  productAddress: string;
   category: string;
   description: string;
   price: number;
@@ -33,7 +33,6 @@ const ProductProfilePage = () => {
   const [product, setProduct] = useState<Product | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [name, setName] = useState('');
-  const [productAddress, setProductAddress] = useState('');
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
@@ -52,7 +51,6 @@ const ProductProfilePage = () => {
         const response = await axios.get(`http://localhost:4000/api/products/${productId}`);
         setProduct(response.data);
         setName(response.data.name);
-        setProductAddress(response.data.productAddress);
         setCategory(response.data.category);
         setDescription(response.data.description);
         setPrice(response.data.price.toString());
@@ -73,31 +71,34 @@ const ProductProfilePage = () => {
   const handleUpdateProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     const token = localStorage.getItem('token');
-
-    if (!name || !productAddress || !price || !imageUrl1) {
+  
+    if (!name || !imageUrl1) {
       setError('Required fields are missing');
       return;
     }
-
+  
+    const productData = {
+      name,
+      category,
+      description,
+      price,
+      imageUrl1,
+      imageUrl2,
+      imageUrl3,
+      imageUrl4,
+      imageUrl5,
+      jsonUrl
+    };
+  
+    console.log('Updating product with data:', productData);  // Log the data being sent
+  
     try {
-      const response = await axios.put(`http://localhost:4000/api/products/${productId}`, {
-        name,
-        productAddress,
-        category,
-        description,
-        price,
-        imageUrl1,
-        imageUrl2,
-        imageUrl3,
-        imageUrl4,
-        imageUrl5,
-        jsonUrl
-      }, {
+      const response = await axios.put(`http://localhost:4000/api/products/${productId}`, productData, {
         headers: {
           Authorization: `Bearer ${token}`
         }
       });
-
+  
       if (response.status === 200) {
         setSuccess('Product updated successfully');
         setProduct(response.data);
@@ -110,12 +111,12 @@ const ProductProfilePage = () => {
       console.error('Error updating product:', err);
     }
   };
+  
 
   const handleCancelEdit = () => {
     setEditMode(false);
     if (product) {
       setName(product.name);
-      setProductAddress(product.productAddress);
       setCategory(product.category);
       setDescription(product.description);
       setPrice(product.price.toString());
@@ -130,6 +131,12 @@ const ProductProfilePage = () => {
 
   const trimUrl = (url: string) => {
     return url.length > 30 ? `${url.substring(0, 30)}...` : url;
+  };
+
+  const handleCopyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      alert('Copied to clipboard');
+    });
   };
 
   return (
@@ -150,26 +157,14 @@ const ProductProfilePage = () => {
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Product Name"
                     required
+                    className="w-full"
                   />
                 ) : (
                   <p className="text-gray-700 dark:text-gray-300">{product.name}</p>
                 )}
                 <hr className="border-gray-300 dark:border-gray-600 my-2" />
               </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300">Product Address</label>
-                {editMode ? (
-                  <Input
-                    value={productAddress}
-                    onChange={(e) => setProductAddress(e.target.value)}
-                    placeholder="Product Address"
-                    required
-                  />
-                ) : (
-                  <p className="text-gray-700 dark:text-gray-300">{product.productAddress}</p>
-                )}
-                <hr className="border-gray-300 dark:border-gray-600 my-2" />
-              </div>
+              
               <div>
                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300">Category</label>
                 {editMode ? (
@@ -178,6 +173,7 @@ const ProductProfilePage = () => {
                     onChange={(e) => setCategory(e.target.value)}
                     placeholder="Category"
                     required
+                    className="w-full"
                   />
                 ) : (
                   <p className="text-gray-700 dark:text-gray-300">{product.category}</p>
@@ -191,6 +187,7 @@ const ProductProfilePage = () => {
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Product Description"
+                    className="w-full"
                   />
                 ) : (
                   <p className="text-gray-700 dark:text-gray-300">{product.description}</p>
@@ -206,6 +203,7 @@ const ProductProfilePage = () => {
                     onChange={(e) => setPrice(e.target.value)}
                     placeholder="Product Price"
                     required
+                    className="w-full"
                   />
                 ) : (
                   <p className="text-gray-700 dark:text-gray-300">${product.price}</p>
@@ -220,87 +218,92 @@ const ProductProfilePage = () => {
                     onChange={(e) => setImageUrl1(e.target.value)}
                     placeholder="Image URL 1"
                     required
+                    className="w-full"
                   />
                 ) : (
                   <>
-                    <Image src={product.imageUrl1} alt={product.name} width={200} height={200} className="object-cover rounded-md" />
+                    <Image src={product.imageUrl1} alt={product.name} width={200} height={200} className="object-cover rounded-md mx-auto" />
                     <p className="text-gray-700 dark:text-gray-300">{trimUrl(product.imageUrl1)}</p>
                   </>
                 )}
                 <hr className="border-gray-300 dark:border-gray-600 my-2" />
               </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300">Image URL 2</label>
-                {editMode ? (
-                  <Input
-                    value={imageUrl2}
-                    onChange={(e) => setImageUrl2(e.target.value)}
-                    placeholder="Image URL 2"
-                  />
-                ) : (
-                  product.imageUrl2 && (
+              {product.imageUrl2 && (
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300">Image URL 2</label>
+                  {editMode ? (
+                    <Input
+                      value={imageUrl2}
+                      onChange={(e) => setImageUrl2(e.target.value)}
+                      placeholder="Image URL 2"
+                      className="w-full"
+                    />
+                  ) : (
                     <>
-                      <Image src={product.imageUrl2} alt={product.name} width={200} height={200} className="object-cover rounded-md" />
+                      <Image src={product.imageUrl2} alt={product.name} width={200} height={200} className="object-cover rounded-md mx-auto" />
                       <p className="text-gray-700 dark:text-gray-300">{trimUrl(product.imageUrl2)}</p>
                     </>
-                  )
-                )}
-                <hr className="border-gray-300 dark:border-gray-600 my-2" />
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300">Image URL 3</label>
-                {editMode ? (
-                  <Input
-                    value={imageUrl3}
-                    onChange={(e) => setImageUrl3(e.target.value)}
-                    placeholder="Image URL 3"
-                  />
-                ) : (
-                  product.imageUrl3 && (
+                  )}
+                  <hr className="border-gray-300 dark:border-gray-600 my-2" />
+                </div>
+              )}
+              {product.imageUrl3 && (
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300">Image URL 3</label>
+                  {editMode ? (
+                    <Input
+                      value={imageUrl3}
+                      onChange={(e) => setImageUrl3(e.target.value)}
+                      placeholder="Image URL 3"
+                      className="w-full"
+                    />
+                  ) : (
                     <>
-                      <Image src={product.imageUrl3} alt={product.name} width={200} height={200} className="object-cover rounded-md" />
+                      <Image src={product.imageUrl3} alt={product.name} width={200} height={200} className="object-cover rounded-md mx-auto" />
                       <p className="text-gray-700 dark:text-gray-300">{trimUrl(product.imageUrl3)}</p>
                     </>
-                  )
-                )}
-                <hr className="border-gray-300 dark:border-gray-600 my-2" />
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300">Image URL 4</label>
-                {editMode ? (
-                  <Input
-                    value={imageUrl4}
-                    onChange={(e) => setImageUrl4(e.target.value)}
-                    placeholder="Image URL 4"
-                  />
-                ) : (
-                  product.imageUrl4 && (
+                  )}
+                  <hr className="border-gray-300 dark:border-gray-600 my-2" />
+                </div>
+              )}
+              {product.imageUrl4 && (
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300">Image URL 4</label>
+                  {editMode ? (
+                    <Input
+                      value={imageUrl4}
+                      onChange={(e) => setImageUrl4(e.target.value)}
+                      placeholder="Image URL 4"
+                      className="w-full"
+                    />
+                  ) : (
                     <>
-                      <Image src={product.imageUrl4} alt={product.name} width={200} height={200} className="object-cover rounded-md" />
+                      <Image src={product.imageUrl4} alt={product.name} width={200} height={200} className="object-cover rounded-md mx-auto" />
                       <p className="text-gray-700 dark:text-gray-300">{trimUrl(product.imageUrl4)}</p>
                     </>
-                  )
-                )}
-                <hr className="border-gray-300 dark:border-gray-600 my-2" />
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300">Image URL 5</label>
-                {editMode ? (
-                  <Input
-                    value={imageUrl5}
-                    onChange={(e) => setImageUrl5(e.target.value)}
-                    placeholder="Image URL 5"
-                  />
-                ) : (
-                  product.imageUrl5 && (
+                  )}
+                  <hr className="border-gray-300 dark:border-gray-600 my-2" />
+                </div>
+              )}
+              {product.imageUrl5 && (
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300">Image URL 5</label>
+                  {editMode ? (
+                    <Input
+                      value={imageUrl5}
+                      onChange={(e) => setImageUrl5(e.target.value)}
+                      placeholder="Image URL 5"
+                      className="w-full"
+                    />
+                  ) : (
                     <>
-                      <Image src={product.imageUrl5} alt={product.name} width={200} height={200} className="object-cover rounded-md" />
+                      <Image src={product.imageUrl5} alt={product.name} width={200} height={200} className="object-cover rounded-md mx-auto" />
                       <p className="text-gray-700 dark:text-gray-300">{trimUrl(product.imageUrl5)}</p>
                     </>
-                  )
-                )}
-                <hr className="border-gray-300 dark:border-gray-600 my-2" />
-              </div>
+                  )}
+                  <hr className="border-gray-300 dark:border-gray-600 my-2" />
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300">JSON URL</label>
                 {editMode ? (
@@ -308,9 +311,16 @@ const ProductProfilePage = () => {
                     value={jsonUrl}
                     onChange={(e) => setJsonUrl(e.target.value)}
                     placeholder="JSON URL"
+                    className="w-full"
                   />
                 ) : (
-                  <p className="text-gray-700 dark:text-gray-300">{trimUrl(product.jsonUrl || '')}</p>
+                  <div className="flex items-center">
+                    <p className="text-gray-700 dark:text-gray-300">{trimUrl(jsonUrl)}</p>
+                    <FiCopy
+                      className="ml-2 text-gray-500 cursor-pointer"
+                      onClick={() => handleCopyToClipboard(jsonUrl)}
+                    />
+                  </div>
                 )}
                 <hr className="border-gray-300 dark:border-gray-600 my-2" />
               </div>

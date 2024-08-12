@@ -1,8 +1,9 @@
+//src/models/Product.js
+
 import mongoose from 'mongoose';
 
 const ProductSchema = new mongoose.Schema({
   name: { type: String, required: true },
-  productAddress: { type: String, required: true },
   gender: { type: String, required: true },
   category: { type: String, required: true },
   color: [{ type: String, required: true }], 
@@ -16,7 +17,10 @@ const ProductSchema = new mongoose.Schema({
   imageUrl4: { type: String },
   imageUrl5: { type: String },
   jsonUrl: { type: String },
+  videoUrl: { type: String },
   listed: { type: Boolean, default: false },
+  designerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  username: { type: String, required: true },
 });
 
 ProductSchema.pre('remove', async function (next) {
