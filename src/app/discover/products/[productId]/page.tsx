@@ -1,6 +1,5 @@
 // src/app/discover/products/[productId]/page.tsx
 
-
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
@@ -10,7 +9,6 @@ import Card from '@/components/Card';
 import Skeleton from '@/components/Skeleton';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ExternalLink } from "lucide-react"
 
 interface Product {
   _id: string;
@@ -33,6 +31,7 @@ interface NFT {
   _id: string;
   tokenAddress: string;
   productId: string;
+  active: string;
 }
 
 const ProductPage: React.FC = () => {
@@ -43,9 +42,10 @@ const ProductPage: React.FC = () => {
   const [nfts, setNfts] = useState<NFT[]>([]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showDropdown, setShowDropdown] = useState<boolean>(false);
-
+  const [activeNFTCount, setActiveNFTCount] = useState<number>(0);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLParagraphElement | null>(null);
+  
 
   useEffect(() => {
     if (productId) {
@@ -57,22 +57,19 @@ const ProductPage: React.FC = () => {
         .catch(error => {
           console.error('Error fetching product:', error);
         });
-  
-      axios.get(`http://localhost:4000/api/nfts/count/${productId}`)
+
+      axios.get(`http://localhost:4000/api/public/products/${productId}/nfts`)
         .then(response => {
-          setNfts(new Array(response.data.count).fill({ tokenAddress: 'Placeholder' })); // Assuming you replace 'Placeholder' with actual data
+          setNfts(response.data);
+          // Count active NFTs
+          const activeNFTs = response.data.filter((nft: NFT) => nft.active === 'yes');
+          setActiveNFTCount(activeNFTs.length);
         })
         .catch(error => {
           console.error('Error fetching NFTs:', error);
         });
     }
   }, [productId]);
-
-  
-  
-  const toggleDropdown = () => {
-    setShowDropdown(!showDropdown);
-  };
 
   useEffect(() => {
     const handleMouseDown = (event: MouseEvent) => {
@@ -126,6 +123,9 @@ const ProductPage: React.FC = () => {
     setMainImage(imageUrls[nextIndex]);
   };
 
+  const toggleDropdown = () => {
+    setShowDropdown(prev => !prev);
+  };
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-gray-100 dark:bg-black p-4">
@@ -143,7 +143,7 @@ const ProductPage: React.FC = () => {
             {mainImage && (
               <Image 
                 src={mainImage} 
-                alt={product.name} 
+                alt={product?.name || 'Product Image'} 
                 width={800} 
                 height={800} 
                 className="object-contain rounded-lg mb-4"
@@ -173,7 +173,7 @@ const ProductPage: React.FC = () => {
               >
                 <Image 
                   src={url} 
-                  alt={`${product.name}-${index}`} 
+                  alt={`${product?.name}-${index}`} 
                   width={100} 
                   height={100} 
                   className="object-contain rounded-md"
@@ -184,75 +184,72 @@ const ProductPage: React.FC = () => {
           </div>
         </div>
         <div className="w-full md:w-1/2 pl-8 mt-4 md:mt-0">
-          <h1 className="text-3xl font-bold mb-4 text-gray-800 dark:text-gray-200">{product.name}</h1>
-          <p className="text-xl font-semibold mb-2 text-gray-600 dark:text-gray-400">${product.price}</p>
-          <p className="text-md mb-4 text-gray-800 dark:text-gray-200">{product.description}</p>
+          <h1 className="text-3xl font-bold mb-4 text-gray-800 dark:text-gray-200">{product?.name}</h1>
+          <p className="text-xl font-semibold mb-2 text-gray-600 dark:text-gray-400">${product?.price}</p>
+          <p className="text-md mb-4 text-gray-800 dark:text-gray-200">{product?.description}</p>
           <p className="text-md text-gray-800 dark:text-gray-200">
             <strong>Collection Address:</strong> 
-            <Link 
-              href={`https://solscan.io/address/${product.collectionAddress}`} 
-              target="_blank" 
-              className="hover:underline ml-2 inline-flex items-center text-gray-800 dark:text-gray-200"
-            >
+            <Link href={`https://solscan.io/address/${product?.collectionAddress}`} target="_blank" className="text-blue-500 hover:underline ml-2">
               {trimmedCollectionAddress}
-              <ExternalLink className="ml-1 h-4 w-4" aria-hidden="true" />
             </Link>
           </p>
           <p className="text-md text-gray-800 dark:text-gray-200">
             <strong>Designer:</strong> 
-            <Link href={`/discover/designers/${product.designerId}`} className="text-gray-600 dark:text-gray-400 hover:underline ml-2">
-              {product.username}
+            <Link href={`/discover/designers/${product?.designerId}`} className="text-gray-600 dark:text-gray-400 hover:underline ml-2">
+              {product?.username}
             </Link>
           </p>
-          <div className="relative inline-block">
-  <p 
-    className="text-md text-gray-800 dark:text-gray-200 cursor-pointer"
-    onClick={toggleDropdown} // Toggle on click instead of hover
-  >
-    <strong>NFTs for Sale:</strong> {nfts.length}
+          <div 
+  className="relative inline-block"
+  ref={triggerRef}
+>
+  <p className="text-md text-gray-800 dark:text-gray-200 cursor-pointer" onClick={toggleDropdown}>
+    <strong>NFTs for Sale:</strong> {activeNFTCount}
   </p>
-  {showDropdown && nfts.length > 0 && (
+  {showDropdown && activeNFTCount > 0 && (
     <div 
       className="absolute bg-white dark:bg-gray-900 border rounded-lg shadow-lg p-4 mt-2 w-64 z-10"
       ref={dropdownRef}
     >
       <h2 className="text-lg font-semibold mb-2 text-gray-800 dark:text-gray-200">Available NFTs:</h2>
       <ul className="list-disc pl-5">
-        {nfts.map((nft, index) => (
-          <li key={index} className="text-gray-600 dark:text-gray-400">
-            <Link href={`/marketplace/${nft.tokenAddress}`} className="text-gray-600 dark:text-gray-400 hover:underline">
-              {nft.tokenAddress}
-            </Link>
-          </li>
-        ))}
+        {nfts
+          .filter(nft => nft.active === 'yes')
+          .map(nft => (
+            <li key={nft._id} className="flex justify-between items-center text-gray-600 dark:text-gray-400 mb-2">
+              <Link href={`/marketplace/${nft._id}`} className="hover:underline">
+                {nft._id.slice(0, 6)}...{nft._id.slice(-4)}
+              </Link>
+              <Link 
+                href={`/marketplace/${nft._id}`} 
+                className="px-2 py-1 rounded transition ml-2 bg-buttonBackground text-buttonText hover:bg-buttonHover"
+              >
+                Buy
+              </Link>
+            </li>
+          ))}
       </ul>
     </div>
   )}
 </div>
-          {product.videoUrl && (
-            <p className="text-md text-gray-800 dark:text-gray-200">
-              <strong>Watch Video:</strong> 
-              <a href={product.videoUrl} target="_blank" rel="noopener noreferrer" className="text-gray-600 dark:text-gray-400 hover:underline ml-2">
-                View Video
-              </a>
-            </p>
-          )}
-          {/* The Buy button placed below the product details */}
-          {nfts.length > 0 ? (
-            <Link href={`/marketplace/${nfts[0]._id}`} className="w-full mt-4 inline-block text-center">
-              <span className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition">
-                Buy
-              </span>
-            </Link>
-          ) : (
-            <button className="mt-4 w-full bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
-              Request
-            </button>
-          )}
+          
+{activeNFTCount > 0 ? (
+  <Link href={`/marketplace/${nfts.find(nft => nft.active === 'yes')?._id}`} className="w-full mt-4 inline-block text-center">
+    <span className="bg-buttonBackground text-buttonText px-4 py-2 rounded hover:bg-buttonHover transition">
+      Buy
+    </span>
+  </Link>
+) : (
+  <button className="mt-4 w-full bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+    Request
+  </button>
+)}
+
         </div>
       </Card>
     </div>
   );
+  
 };
 
 export default ProductPage;

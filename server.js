@@ -1048,9 +1048,6 @@ server.get('/api/public/nft/:id', async (req, res) => {
 });
 
 
-
-
-
 server.get('/api/nfts', async (req, res) => {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) return res.status(401).json({ message: 'Access denied' });
@@ -1123,66 +1120,63 @@ server.put('/api/updateNFTStatus', async (req, res) => {
   }
 });
 
-
-// BREVO
-// Function to send email using Brevo
-async function sendBrevoEmail(toEmail, templateId, params) {
+// Fetch NFTs by specific product ID with count of active NFTs
+server.get('/api/nfts/by-product/:productId', async (req, res) => {
+  const { productId } = req.params;
   try {
-    const response = await axios.post('https://api.brevo.com/v3/smtp/email', {
-      sender: {
-        name: 'Your Marketplace',
-        email: 'noreply@yourmarketplace.com',
-      },
-      to: [{ email: toEmail }],
-      templateId: templateId,
-      params: params,
-    }, {
-      headers: {
-        'accept': 'application/json',
-        'api-key': process.env.BREVO_API_KEY,
-        'content-type': 'application/json',
-      },
-    });
+    // Find NFTs that match the given productId
+    const nfts = await NFT.find({ productId });
 
-    console.log('Email sent successfully:', response.data);
-  } catch (error) {
-    console.error('Error sending email:', error.response ? error.response.data : error.message);
-  }
-}
-
-server.post('/api/purchase', async (req, res) => {
-  try {
-    const { buyerEmail, sellerEmail, nftId, shippingAddress } = req.body;
-
-    // Fetch NFT details (this is an example; adjust according to your actual models and logic)
-    const nftDetails = await NFT.findById(nftId);
-
-    if (!nftDetails) {
-      return res.status(404).json({ message: 'NFT not found' });
+    if (nfts.length === 0) {
+      return res.status(404).json({ message: 'No NFTs found for this product' });
     }
 
-    // Update NFT status to sold (example logic)
-    nftDetails.status = 'sold';
-    await nftDetails.save();
+    // Count the number of active NFTs
+    const activeCount = nfts.filter(nft => nft.active === 'yes').length;
 
-    // Send email to buyer
-    await sendBrevoEmail(buyerEmail, process.env.BREVO_BUYER_TEMPLATE_ID, {
-      product_name: nftDetails.name,
-      order_id: nftDetails._id,
-      purchase_date: new Date().toLocaleDateString(),
-    });
-
-    // Send email to seller
-    await sendBrevoEmail(sellerEmail, process.env.BREVO_SELLER_TEMPLATE_ID, {
-      buyer_address: shippingAddress,
-      product_name: nftDetails.name,
-      sale_price: nftDetails.price,
-    });
-
-    res.status(200).json({ message: 'Purchase processed and emails sent.' });
+    res.status(200).json({ nfts, activeCount });
   } catch (error) {
-    console.error('Error processing purchase:', error);
-    res.status(500).json({ message: 'Error processing purchase.' });
+    console.error('Error fetching NFTs:', error);
+    res.status(500).json({ message: 'Server error', error });
+  }
+});
+
+
+
+// Aggregation Route: Fetch NFTs grouped by product ID
+server.get('/api/nfts/grouped-by-product', async (req, res) => {
+  try {
+    const nftGroups = await NFT.aggregate([
+      { $match: { active: 'yes' } }, // Filter only active NFTs
+      {
+        $group: {
+          _id: '$productId',
+          nfts: { $push: { _id: '$_id', tokenAddress: '$walletAddress' } },
+        },
+      },
+      {
+        $lookup: {
+          from: 'products', // Assuming your products collection is named 'products'
+          localField: '_id',
+          foreignField: '_id',
+          as: 'productDetails',
+        },
+      },
+      { $unwind: '$productDetails' },
+      {
+        $project: {
+          _id: 0,
+          productId: '$_id',
+          productName: '$productDetails.name',
+          nfts: 1,
+        },
+      },
+    ]);
+
+    res.status(200).json(nftGroups);
+  } catch (error) {
+    console.error('Error aggregating NFTs by productId:', error);
+    res.status(500).json({ error: 'Error fetching NFTs grouped by productId' });
   }
 });
 
